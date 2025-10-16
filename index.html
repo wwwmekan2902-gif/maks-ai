@@ -1,16 +1,78 @@
 <!DOCTYPE html>
 <html lang="tk">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Maks AI Chat</title>
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Maks AI Chat</title>
+<style>
+body { background:#000; color:#00ffe5; font-family: monospace; margin:0; padding:0; }
+h1 { text-align:center; color:#00ffee; margin-top:20px;}
+#chatbox { width:85%; height:70vh; margin:20px auto; background:rgba(0,0,0,0.6); border-radius:15px; padding:20px; overflow-y:auto;}
+.inputBox { width:85%; margin:0 auto; display:flex; justify-content:center; margin-bottom:30px;}
+input { width:65%; padding:12px; border-radius:20px; border:none; outline:none; font-size:16px;}
+button { padding:12px 25px; border:none; border-radius:20px; cursor:pointer; background:linear-gradient(45deg,#00ffaa,#00bbff); color:#001; font-weight:bold; margin-left:10px;}
+button:hover { transform:scale(1.05); box-shadow:0 0 10px #00ffff99;}
+.msg { padding:8px 12px; margin:8px 0; border-radius:10px; max-width:70%; }
+.user { background:linear-gradient(45deg,#00ffee,#00bbff); color:#001; margin-left:auto; text-align:right; }
+.bot { background: rgba(255,255,255,0.05); border-left: 3px solid #00ffff66; }
+</style>
 </head>
 <body>
-  <h1>🤖 Maks AI Chat</h1>
-  <div id="chat-box"></div>
-  <input type="text" id="userInput" placeholder="Sorag ýaz..." />
-  <button onclick="sendMessage()">Ugrat</button>
-  <script src="script.js"></script>
+<h1>🤖 Maks AI Chat</h1>
+<div id="chatbox"></div>
+<div class="inputBox">
+<input id="userInput" placeholder="Sorag ýaz..." onkeypress="if(event.key==='Enter'){sendMsg()}">
+<button onclick="sendMsg()">Ugrat</button>
+</div>
+
+<script>
+const chatbox = document.getElementById("chatbox");
+const input = document.getElementById("userInput");
+
+// 🔑 API açaryňy şu ýere goý
+const OPENAI_KEY = "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";
+
+function sendMsg(){
+  const text = input.value.trim();
+  if(!text) return;
+  addMsg("user", text);
+  input.value = "";
+
+  fetch("https://api.openai.com/v1/chat/completions", {
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json",
+      "Authorization": `Bearer ${OPENAI_KEY}`
+    },
+    body: JSON.stringify({
+      model: "gpt-4o-mini",
+      messages: [{ role:"user", content:text }]
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+    const reply = data.choices?.[0]?.message?.content || "Jogap tapylmady 😅";
+    addMsg("bot", reply);
+    speak(reply);
+  })
+  .catch(()=> addMsg("bot","❌ API bilen baglanyşyk ýok."));
+}
+
+function addMsg(sender, text){
+  const msg = document.createElement("div");
+  msg.textContent = (sender==="user"?"Sen: ":"AI: ") + text;
+  msg.className = sender==="user"?"msg user":"msg bot";
+  chatbox.appendChild(msg);
+  chatbox.scrollTop = chatbox.scrollHeight;
+}
+
+function speak(text){
+  if('speechSynthesis' in window){
+    const speech = new SpeechSynthesisUtterance(text);
+    speech.lang='en-US'; speech.pitch=1; speech.rate=1; speech.volume=1;
+    speechSynthesis.speak(speech);
+  }
+}
+</script>
 </body>
 </html>
